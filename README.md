@@ -40,14 +40,19 @@ export AM_URL="http://your-alertmanager-url"  # 可选，用于生成链接
 
 ### 3. 运行服务
 
-**方式一：直接运行**
-```bash
-python main.py
-```
-
-**方式二：使用 uvicorn**
+**推荐方式：使用 uvicorn**
 ```bash
 uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+**开发模式（自动重载）**
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+**方式二：直接运行**
+```bash
+python main.py
 ```
 
 ## API 接口
@@ -98,6 +103,18 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 - 告警数量
 - 详细的 payload 内容（用于调试）
 
+### 日志输出
+
+- **开发环境** - 日志输出到控制台
+- **生产环境** - 通过 systemd 重定向到 `/var/log/webhook/webhook.log`
+
+### 日志文件管理
+
+- 使用 systemd 的 `StandardOutput` 和 `StandardError` 重定向
+- 日志文件路径：`/var/log/webhook/webhook.log`
+- 需要创建日志目录：`sudo mkdir -p /var/log/webhook`
+- 设置权限：`sudo chown your-user:your-user /var/log/webhook`
+
 ## 企业微信卡片格式
 
 生成的卡片包含以下信息：
@@ -130,7 +147,9 @@ Type=simple
 User=your-user
 WorkingDirectory=/path/to/webhook
 Environment=WECOM_WEBHOOK=https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=YOUR_KEY
-ExecStart=/path/to/python main.py
+ExecStart=/path/to/uvicorn main:app --host 0.0.0.0 --port 8000
+StandardOutput=append:/var/log/webhook/webhook.log
+StandardError=append:/var/log/webhook/webhook.log
 Restart=always
 RestartSec=10
 
